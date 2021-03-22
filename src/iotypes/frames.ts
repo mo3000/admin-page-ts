@@ -1,4 +1,3 @@
-import {JsonResp} from "axios";
 
 interface LoginResp {
   username: string;

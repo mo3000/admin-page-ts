@@ -2,12 +2,6 @@ import {AxiosRequestConfig} from "axios";
 
 declare module 'axios' {
 
-  export interface JsonResp<T = any> {
-    code: number;
-    msg: string;
-    data: T;
-  }
-
   export interface AxiosInstance {
     <T = any>(config: AxiosRequestConfig): Promise<T>;
 
@@ -25,4 +19,5 @@ declare module 'axios' {
 
     patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>;
   }
+
 }
