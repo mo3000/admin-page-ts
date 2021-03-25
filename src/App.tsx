@@ -1,32 +1,38 @@
-import React, {ReactElement, SetStateAction, useEffect} from 'react';
-import logo from './logo.svg';
+import React, {ReactComponentElement, SetStateAction, useEffect, useState} from 'react';
 import './App.css';
 import {BrowserRouter as Router, Switch, Route, Redirect, useHistory} from 'react-router-dom';
-import {useState} from 'react';
 import Auth from "./Auth";
 import {http} from "./util";
 import {message, Row, Select, Spin, Layout} from "antd";
 import {SelectValue} from "antd/lib/select";
+import LoginForm from "./pages/frame/login";
+import AdminMenu from "./pages/frame/menu";
+import {MenuComponentDef, MenuItemDef} from "./routes";
 
 interface RouteParam {
-  children: ReactElement;
+  children: ReactComponentElement<any>;
   auth: Auth;
+  path: string;
 }
 
 function PrivateRoute({children, auth, ...rest}: RouteParam) {
-  return (
-    <Route
-      {...rest}
-      render={({location}) => auth.isAuthenticated ? children : (
+  console.log('PrivateRoute', rest);
+  return <Route
+    {...rest}
+    render={({location}) => {
+      console.log('in route', location);
+      console.log('in route', auth);
+      console.log('in route', rest);
+      return auth.isAuthenticated ? children : (
         <Redirect
           to={{
             pathname: "/login",
             state: {from: location}
           }}
         />
-      )}
-    />
-  );
+      )
+    }}
+  />;
 }
 
 interface HeaderParam {
@@ -72,6 +78,33 @@ function Header({setAuth}: HeaderParam) {
   );
 }
 
+// @ts-ignore
+function LoginRoutes({setAuth, auth}) {
+  return <Layout>
+    <Header setAuth={setAuth} />
+    <Layout>
+      <Layout.Sider breakpoint='sm'>
+        <AdminMenu menuContent={MenuItemDef} auth={auth}/>
+      </Layout.Sider>
+      <Layout.Content style={{minHeight: 600}}>
+        <Switch>
+          {MenuComponentDef.map((route, i) => {
+              console.log('MenuComponentDef', route);
+              return (<PrivateRoute auth={auth} key={i} path={route.path}>
+                <route.component />
+              </PrivateRoute>);
+            }
+          )}
+        </Switch>
+      </Layout.Content>
+    </Layout>
+    <Layout.Footer style={{backgroundColor: "lightblue"}}>
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ footer ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    </Layout.Footer>
+  </Layout>
+}
+
+
 function App() {
   const [auth, setAuth] = useState<Auth>({isAuthenticated: false, roles: []});
   useEffect(() => {
@@ -79,52 +112,46 @@ function App() {
     const _roles = localStorage.getItem('admin-roles');
     const roles = _roles ? _roles.split(',') : [];
     http.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    if (token && ! auth.isAuthenticated) {
+    if (token) {
       setAuth({isAuthenticated: true, roles: roles});
     }
-  }, [auth.isAuthenticated]);
+  }, []);
 
   useEffect(() => {
     http.interceptors.response.use(res => {
-      if (res.data.code === 0) {
-        return res.data.data;
-      } else if (res.data.code === 1) {
-        return Promise.reject(res.data.msg);
-      } else if (res.data.code === 2) {
-        console.log(res.data.data);
-        return Promise.reject('表单验证失败');
+      const {data} = res;
+      if (res.status && res.status !== 200) {
+        return Promise.reject(data.message || data.error);
+      } else if (data.code === 0) {
+        return data.data;
+      } else if (data.code === 1) {
+        return Promise.reject(data.msg);
+      } else if (data.code === 2) {
+        console.log(data.data);
+        return Promise.reject(data.data);
       } else if (res.status === 401) {
         localStorage.clear();
         message.warning('登录态已失效，请重新登录');
         setAuth({isAuthenticated: false, roles: []});
       } else if (res.status === 403) {
-        message.error('您无权限进行此操作');
-        return Promise.reject(res);
+        message.warning('您无权限进行此操作');
+        return Promise.reject(data);
       } else {
         console.log('http unknown response:', res);
-        return Promise.reject(res);
+        return Promise.reject(data.message);
       }
     });
   }, []);
 
-
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Switch>
+        <Route path='/login' exact>
+          <LoginForm setAuth={setAuth}/>
+        </Route>
+        <LoginRoutes setAuth={setAuth} auth={auth} />
+      </Switch>
+    </Router>
   );
 }
 

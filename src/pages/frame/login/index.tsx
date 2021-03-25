@@ -1,11 +1,10 @@
-import './index.css';
 import {useState} from 'react';
 import React from 'react';
 import {Form, Button, Input, Layout, Row, message} from "antd";
 import {http} from "../../../util";
 import {useHistory} from "react-router";
 import Auth from "../../../Auth";
-import {LoginResp} from '../../../iotypes';
+import {LoginResp} from '../../../iotypes/frame';
 
 const {Item, useForm} = Form;
 const {Content} = Layout;
@@ -24,12 +23,13 @@ export default function LoginForm({setAuth}: LoginFormParam) {
         setLoading(true);
         http.post<LoginResp>('/login', {username: values.username, password: values.password})
           .then(data => {
+            console.log('login', data);
             setLoading(false);
             localStorage.setItem('admin-token', data.token);
             localStorage.setItem('admin-roles', data.roles.join(','));
             setAuth({isAuthenticated: true, roles: data.roles});
             message.success('登录成功');
-            history.replace('/');
+            history.replace('/admin');
           })
           .catch(msg => {
             setLoading(false);
