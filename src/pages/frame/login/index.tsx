@@ -29,7 +29,7 @@ export default function LoginForm({setAuth}: LoginFormParam) {
             localStorage.setItem('admin-roles', data.roles.join(','));
             setAuth({isAuthenticated: true, roles: data.roles});
             message.success('登录成功');
-            history.replace('/admin');
+            history.replace('/');
           })
           .catch(msg => {
             setLoading(false);

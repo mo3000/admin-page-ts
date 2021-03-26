@@ -2,7 +2,7 @@
 
 interface Auth {
   isAuthenticated: boolean;
-  roles: Array<String>;
+  roles: String[];
 }
 
 

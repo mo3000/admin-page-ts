@@ -46,12 +46,13 @@ export default function Admin() {
 
   function getList(values: AdminListQueryParam | null = null) {
     setTableLoading(true);
-    const data = values || search;
+    const data = {...values, ...search};
     http.post<Paginator<AdminList>>('/admin/list', {
       page: paginator.page,
       ...data,
     })
       .then(data => {
+        console.log('setList', data.data);
         setList(data.data);
         setPaginator({total: data.total, page: data.page});
         setTableLoading(false);
@@ -143,7 +144,7 @@ export default function Admin() {
       title: '状态',
       dataIndex: 'status',
       render: (v: number) => {
-        return <Badge status={v === 1 ? 'success' : 'error'} text={v === 1 ? '启用中' : '禁用中'}/>;
+        return <Badge status={v === 0 ? 'success' : 'error'} text={v === 0 ? '启用中' : '禁用中'}/>;
       }
     },
     {
@@ -151,7 +152,7 @@ export default function Admin() {
       render: (v: any, row: AdminListItem) => {
         const id = String(row.id);
         return (<div>
-          <Button onClick={() => toggleStatus(id)}>{row.status === 1 ? '禁用' : '启用'}</Button>
+          <Button onClick={() => toggleStatus(id)}>{row.status === 0 ? '禁用' : '启用'}</Button>
           <Divider type='vertical'/>
           <Button onClick={() => resetPassword(id)}>重置密码</Button>
           <Divider type='vertical'/>
